@@ -8,7 +8,7 @@ export const COUPON_DISCOUNT_TYPE = {
 };
 
 // PAUSED = admin-disabled (soft "delete" per the Brief: "delete/pause").
-// EXPIRED is derived from expiresAt at read-time, not stored — see note below.
+// EXPIRED is derived from expiresAt at read-time, not stored 
 export const COUPON_STATUS = {
   ACTIVE: "ACTIVE",
   PAUSED: "PAUSED",
@@ -28,9 +28,6 @@ const couponSchema = new Schema(
       enum: Object.values(COUPON_DISCOUNT_TYPE),
       required: [true, "Discount type is required"],
     },
-    // For PERCENT: 0-100. For FLAT: a rupee amount. Validated together in the
-    // Joi schema (percent capped at 100) since Mongoose alone can't express
-    // "min/max depends on a sibling field" cleanly.
     discountValue: {
       type: Number,
       required: [true, "Discount value is required"],
@@ -41,11 +38,6 @@ const couponSchema = new Schema(
       required: [true, "Max uses is required"],
       min: 1,
     },
-    // Denormalized counter, kept in sync with actual APPLIED redemption rows
-    // by the atomic $inc in the redeem/revert services (never edited directly
-    // by an admin CRUD call). This is what Gate 1's findOneAndUpdate filter
-    // checks against maxUses, and what Gate 4's transaction keeps consistent
-    // with the Redemption collection.
     usedCount: {
       type: Number,
       default: 0,
@@ -73,13 +65,6 @@ const couponSchema = new Schema(
   { timestamps: true }
 );
 
-// `code` already gets a unique index from `unique: true` above — that's what
-// makes the redemption lookup (Coupon.findOne({ code })) and create-time
-// duplicate check fast.
-//
-// This compound index backs the query every /redeem call runs (and Gate 1's
-// atomic update filter): "find an ACTIVE, not-yet-expired coupon by code".
-// It also backs the admin list's status filter.
 couponSchema.index({ status: 1, expiresAt: 1 });
 
 const Coupon = model("Coupon", couponSchema);

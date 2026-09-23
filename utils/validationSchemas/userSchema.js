@@ -11,8 +11,7 @@ export const createUserSchema = Joi.object({
     })
     .required(),
   password: Joi.string().min(6).required(),
-  // Admins create both admins and customers via this same endpoint (customers
-  // don't self-signup per the Brief). Defaults to customer when omitted.
+  // Admins create both admins and customers via this same endpoint. Defaults to customer when omitted.
   role: Joi.string()
     .valid(...Object.values(USER_ROLES))
     .default(USER_ROLES.CUSTOMER),

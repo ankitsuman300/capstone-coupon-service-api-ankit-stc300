@@ -7,8 +7,7 @@ export const REDEMPTION_STATUS = {
   REVERTED: "REVERTED",
 };
 
-// GATE 2 FIX — Per-user limit race (Category B).
-//
+// FIX — Per-user limit race 
 // The naive version counted the user's existing APPLIED redemptions for
 // this coupon IN JAVASCRIPT (Redemption.countDocuments), then created a new
 // one in a later step.
@@ -67,13 +66,10 @@ redemptionSchema.index(
   }
 );
 
-// GATE 3 (idempotency) — unique on (couponId, userId, orderId): the same
+// (idempotency) — unique on (couponId, userId, orderId): the same
 // user retrying the same order against the same coupon can only ever
 // create ONE APPLIED redemption row, no matter how many times the retry
-// fires concurrently. This is now fully decoupled from HOW MANY distinct
-// orders a user is allowed — that's Gate 2, enforced separately via
-// UserCouponUsage's atomic counter — so an E11000 here can only mean "this
-// exact order was already redeemed," never "the per-user limit was hit."
+// fires concurrently. 
 
 const Redemption = model("Redemption", redemptionSchema);
 export default Redemption;

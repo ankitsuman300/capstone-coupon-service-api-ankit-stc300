@@ -1,9 +1,6 @@
 import Joi from "joi";
 import { COUPON_DISCOUNT_TYPE, COUPON_STATUS } from "../../models/couponModel.js";
 
-// discountValue's valid range depends on discountType (PERCENT: 0-100,
-// FLAT: any positive amount) — that's a cross-field rule Mongoose can't
-// express cleanly, so it's enforced here instead.
 const discountValueCheck = (value, helpers) => {
   const { discountType } = helpers.state.ancestors[0];
   if (discountType === COUPON_DISCOUNT_TYPE.PERCENT && value > 100) {
@@ -36,7 +33,4 @@ export const updateCouponSchema = Joi.object({
   status: Joi.string()
     .valid(...Object.values(COUPON_STATUS))
     .optional(),
-  // code is intentionally NOT editable — once redemptions reference a coupon
-  // by code lookups elsewhere, renaming it invites confusion. Pause + create
-  // a new one instead.
 }).min(1);

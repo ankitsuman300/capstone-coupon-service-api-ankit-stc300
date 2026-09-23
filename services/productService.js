@@ -57,14 +57,13 @@ export const deleteProductService = async (id) => {
 };
 
 /**
- * Atomically decrement stock for a purchase.
- *
  * The guard lives in the QUERY FILTER, not in application code: we only match a
  * document that is ACTIVE and still has enough stock, then decrement in the same
  * operation. Because findOneAndUpdate is atomic at the document level, 200
  * concurrent buyers of the last unit produce exactly one winner — no read-then-write
- * race. This is the same pattern the coupon-redemption capstone needs.
- */
+ * race. 
+ * */
+
 export const purchaseProductService = async (id, quantity) => {
   const product = await Product.findOneAndUpdate(
     { _id: id, status: PRODUCT_STATUS.ACTIVE, stock: { $gte: quantity } },
@@ -73,7 +72,7 @@ export const purchaseProductService = async (id, quantity) => {
   );
 
   if (!product) {
-    // The filter didn't match — figure out why so the client gets a useful error.
+    // The filter didn't match 
     const existing = await Product.findById(id);
     if (!existing) {
       throw new AppError("Product not found with this id", 404, {

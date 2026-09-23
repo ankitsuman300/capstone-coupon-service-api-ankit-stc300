@@ -18,9 +18,6 @@ if (!repoName) {
   process.exit(1);
 }
 
-// const gitCheckoutCommand = `git clone --depth 1 https://github.com/Seventh-Triangle-Consulting/S7C_Node_App_Starter.git ${repoName}`;
-// const installDepsCommand = `cd ${repoName} && npm install`;
-// const gitInitCommand = `cd ${repoName} && git init`;
 
 console.log("Cloning the repository with the name", repoName);
 runCommand(gitCheckoutCommand);

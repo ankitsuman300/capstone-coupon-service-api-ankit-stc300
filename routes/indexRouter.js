@@ -11,7 +11,8 @@ const router = express.Router();
 // Authenticated user resource (self-contained login/logout/refresh + CRUD).
 router.use("/users", userRouter);
 
-// Admin-gated resources. verifyToken proves the caller is authenticated;
+// Admin-gated resources.
+// verifyToken proves the caller is authenticated;
 // requireRole proves they're specifically an admin.
 router.use(
   "/admin",

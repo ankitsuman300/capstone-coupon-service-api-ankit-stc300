@@ -46,10 +46,6 @@ const sendError = (error, req, res) => {
     ];
   }
 
-  // Route errors to structured logging (Loki in prod, console in local dev).
-  // 5xx = unexpected server faults ("error"); 4xx = client faults ("warn").
-  // requestId lets you pull every log line for one failing request out of
-  // a sea of concurrent traffic (see middlewares/correlationId.js).
   Logger.log(statusCode >= 500 ? "error" : "warn", error.message, {
     statusCode: `${statusCode}`,
     name: error.name || "Error",

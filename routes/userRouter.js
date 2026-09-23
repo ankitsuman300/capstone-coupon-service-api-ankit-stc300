@@ -22,17 +22,10 @@ const router = express.Router();
 
 // ---------------------------------------------------------------------------
 // Auth self-service (login/refresh/logout) stays open to any authenticated-
-// enough caller — no role check makes sense here, you're establishing who
-// you are, not acting on someone else's data yet.
-//
 // User CRUD below (list/create/update/delete) is admin-only per the Brief:
-// "customers don't self-signup ... created by admins via User CRUD". Gating
-// it with requireRole closes the IDOR this router used to have (previously
-// any logged-in user — including a customer — could list/edit/delete ANY
-// user by id, and POST "/" was fully public).
-// ---------------------------------------------------------------------------
+// "customers don't self-signup ... created by admins via User CRUD". 
 
-router.route("/login").post(loginRateLimiter, loginUser);
+router.route("/login").post(loginRateLimiter, loginUser); 
 
 router
   .route("/update-refresh-access")

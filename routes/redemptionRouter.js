@@ -5,8 +5,7 @@ import { validateRequest } from "../middlewares/validations.js";
 import { redeemCouponSchema } from "../utils/validationSchemas/redemptionSchema.js";
 import { redeemRateLimiter } from "../middlewares/rateLimit.js";
 
-// Both roles can redeem per the Brief ("Customer + Admin: Redemption page"),
-// so this only requires authentication, not a specific role.
+// Both roles can redeem so this only requires authentication, not a specific role.
 const router = express.Router();
 
 router.post(

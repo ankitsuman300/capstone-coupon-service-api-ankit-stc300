@@ -8,8 +8,8 @@ import UserCouponUsage from "../models/userCouponUsageModel.js";
 
 
 // Distinguishes "the Redemption insert hit our unique index" from any other
-// error thrown inside the transaction, so the outer catch knows to run the
-// Gate 3 idempotency disambiguation instead of just rethrowing.
+// error thrown inside the transaction.
+
 class RedemptionConflictError extends Error {
   constructor(couponId) {
     super("Redemption unique-index conflict");
@@ -40,32 +40,12 @@ const diagnoseCouponRejection = async (code) => {
   });
 };
 
-// ===========================================================================
-// GATE 4 FIX — Multi-document consistency (Category D).
+// Multi-document consistency
 //
-// Even with Gates 1-3 fixed, the coupon's usedCount $inc and the Redemption
-// insert are still TWO separate write operations. If the process crashes,
-// loses its DB connection, or the insert fails for an unrelated reason
-// AFTER the coupon increment commits but BEFORE the redemption is written,
-// usedCount is now permanently higher than the number of real APPLIED
-// redemption rows — the audit in Gate 4's test catches exactly this.
-//
+// The coupon's usedCount $inc and the Redemption
+// insert are still TWO separate write operations.
 // session.withTransaction wraps both writes so they commit or roll back
-// together, atomically, across both collections. This requires MongoDB to
-// be running as a replica set (a single standalone mongod can't run
-// transactions) — if you're on a bare local mongod, the fix is `mongod
-// --replSet rs0` plus `rs.initiate()` once, or use MongoDB Atlas (which is
-// already a replica set). Flag this requirement in your TSD.
-//
-// withTransaction retries the whole callback on TransientTransactionError
-// and retries just the commit on UnknownTransactionCommitResult — that
-// retry behavior is built into the driver, not something we hand-roll here.
-// ===========================================================================
 
-// Atomically claims one "slot" for this user on this coupon, respecting
-// coupon.perUserLimit. Mirrors Gate 1's pattern (findOneAndUpdate + $expr)
-// but per (user, coupon) instead of coupon-wide — this is what lets
-// perUserLimit be any number, not just 1.
 const claimUserSlot = async (userId, couponId, perUserLimit, session) => {
   let usage = await UserCouponUsage.findOneAndUpdate(
     { userId, couponId, count: { $lt: perUserLimit } },
@@ -99,7 +79,6 @@ export const redeemCouponService = async (
 
   try {
     await session.withTransaction(async () => {
-      // Step 1+2 (Gate 1): atomic claim, now inside the transaction.
       const coupon = await Coupon.findOneAndUpdate(
         {
           code,
@@ -117,7 +96,7 @@ export const redeemCouponService = async (
         throw await diagnoseCouponRejection(code);
       }
 
-      // Gate 2: atomic claim on THIS user's personal limit for this coupon.
+      // Atomic claim on THIS user's personal limit for this coupon.
       const usage = await claimUserSlot(
         userId,
         coupon._id,
@@ -132,14 +111,13 @@ export const redeemCouponService = async (
         // });
 
         throw new RedemptionConflictError(coupon._id);
-
       }
 
       const discountAmount = calculateDiscount(coupon, orderAmount);
       const finalAmount = orderAmount - discountAmount;
 
       try {
-        // Steps 3+4 (Gates 2+3): the partial unique index on
+        // The partial unique index on
         // (couponId, userId) in redemptionModel.js enforces the per-user
         // limit atomically, in the SAME transaction as the coupon $inc.
         const created = await Redemption.create(
@@ -194,17 +172,15 @@ export const redeemCouponService = async (
 
 // ===========================================================================
 // Revert — admin-only.
-//  Category A (findOneAndUpdate filter guards against reverting an
-// already-reverted redemption twice ===========================================================================
+// findOneAndUpdate filter guards against reverting an
+// already-reverted redemption twice ===========================================================
+
 export const revertRedemptionService = async (redemptionId) => {
   const session = await mongoose.startSession();
   let result;
 
   try {
     await session.withTransaction(async () => {
-      // Category A: filtering on status: APPLIED means a second concurrent
-      // revert call (or a double-click) on the same id finds no match and
-      // fails cleanly instead of double-decrementing usedCount.
       const redemption = await Redemption.findOneAndUpdate(
         { _id: redemptionId, status: REDEMPTION_STATUS.APPLIED },
         { status: REDEMPTION_STATUS.REVERTED },
@@ -228,19 +204,12 @@ export const revertRedemptionService = async (redemptionId) => {
         });
       }
 
-      // usedCount: { $gt: 0 } is a defensive guard, not the primary
-      // correctness mechanism — the APPLIED-only filter above already
-      // guarantees this redemption was counted exactly once. Belt and
-      // braces against usedCount ever going negative if data is ever
-      // inconsistent for an unrelated reason.
       const coupon = await Coupon.findOneAndUpdate(
         { _id: redemption.couponId, usedCount: { $gt: 0 } },
         { $inc: { usedCount: -1 } },
         { new: true, session },
       );
 
-      // Symmetric to the coupon decrement above — revert-then-redeem-again
-      // should be legitimate under Gate 2 as well, not just Gate 1.
       await UserCouponUsage.findOneAndUpdate(
         {
           userId: redemption.userId,
@@ -288,11 +257,13 @@ export const getRedemptionByIdService = async (id) => {
   return redemption;
 };
 
-// Ownership check (Module 2 pattern): userId comes from req.user.id in the
+// Ownership check  userId comes from req.user.id in the
 // controller — NEVER from a route param or the request body — so there is
 // no way for one customer to pass another customer's id and see their
 // history. This is what closes the exact IDOR class the userRouter comment
 // warned about elsewhere in this codebase.
+
+
 export const getMyRedemptionsService = async (userId, queryString) => {
   const features = new APIFeatures(Redemption.find({ userId }), queryString);
   await features.process();

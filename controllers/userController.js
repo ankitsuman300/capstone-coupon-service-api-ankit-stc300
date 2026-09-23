@@ -47,7 +47,7 @@ export const logoutUser = catchAsync(async (req, res) => {
 });
 
 export const getAllUsers = catchAsync(async (req, res) => {
-  // 1. Filtering
+  //  Filtering
   const queryObj = { ...req.query };
   const excludeFields = ["page", "sort", "limit", "fields"];
   excludeFields.forEach((el) => delete queryObj[el]);
@@ -60,10 +60,10 @@ export const getAllUsers = catchAsync(async (req, res) => {
   );
   let filter = JSON.parse(queryStr);
 
-  // 2. Query
+  //  Query
   let query = User.find(filter);
 
-  // 3. Sorting
+  //  Sorting
   if (req.query.sort) {
     const sortBy = req.query.sort.split(",").join(" ");
     query = query.sort(sortBy);
@@ -71,7 +71,7 @@ export const getAllUsers = catchAsync(async (req, res) => {
     query = query.sort("-createdAt");
   }
 
-  // 4. Field limiting
+  //  Field limiting
   if (req.query.fields) {
     const fields = req.query.fields.split(",").join(" ");
     query = query.select(fields);
@@ -79,13 +79,14 @@ export const getAllUsers = catchAsync(async (req, res) => {
     query = query.select("-__v");
   }
 
-  // 5. Pagination
+  //  Pagination
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 10;
   const skip = (page - 1) * limit;
   query = query.skip(skip).limit(limit);
 
-  // 6. Execute query
+  
+  //  Execute query
   const users = await query;
   const totalCount = await User.countDocuments(filter);
 

@@ -3,9 +3,7 @@ import mongoose from "mongoose";
 const { Schema, model } = mongoose;
 
 // One document per (user, coupon) pair — how many times THIS user has
-// redeemed THIS coupon. This is what makes perUserLimit > 1 possible: Gate
-// 2 becomes "at most N", checked the same atomic way Gate 1 checks
-// usedCount against maxUses on the Coupon document.
+// redeemed THIS coupon. This is what makes perUserLimit > 1 possible.
 const userCouponUsageSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },

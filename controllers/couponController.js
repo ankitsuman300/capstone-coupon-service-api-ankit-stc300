@@ -73,8 +73,6 @@ export const bulkImportCoupons = catchAsync(async (req, res) => {
   });
 });
 
-// Polled by the frontend to show progress/completion for a job started
-// above. Read-only, admin-gated the same way as every other coupon route.
 export const getBulkImportStatus = catchAsync(async (req, res) => {
   const job = getBulkImportJobStatusService(req.params.jobId);
   new AppSuccess(res, { statusCode: 200, message: "Job status", data: job });

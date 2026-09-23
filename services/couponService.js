@@ -9,7 +9,7 @@ import { randomUUID } from "crypto";
 
 export const getAllCouponsService = async (queryString) => {
   // APIFeatures already gives us filter (?status=ACTIVE), sort, pagination,
-  // and field limiting for free. "Search by code fragment" (Brief) rides on
+  // and field limiting for free. "Search by code fragment" rides on
   // top of that: if a `search` query param is present, turn it into a
   // case-insensitive regex filter on `code` before handing off to APIFeatures.
   const mongoQuery = Coupon.find();
@@ -73,7 +73,7 @@ export const updateCouponService = async (id, couponData) => {
   return coupon;
 };
 
-// "delete/pause" per the Brief — we never hard-delete a coupon that may
+// "delete/pause" — we never hard-delete a coupon that may
 // already have redemptions pointing at it (would orphan Redemption.couponId
 // and break analytics/history). Pausing is the real operation; this stays
 // named deleteCouponService to match the CRUD verb the route uses.
@@ -87,10 +87,8 @@ export const deleteCouponService = async (id) => {
 // Analytics: top-N coupons by redemption count + a summary. Runs as a single
 // aggregation pipeline against Redemption (the source of truth for actual
 // usage) rather than trusting Coupon.usedCount for the ranking — usedCount
-// is a denormalized counter for the hot path (Gate 1's atomic check), while
-// this is a read-heavy, infrequent admin query where the extra $group cost
-// is fine and gives you a number that's independently verifiable against
-// the Redemption collection.
+// is a denormalized counter for the hot path
+
 export const getCouponAnalyticsService = async ({ limit = 5 } = {}) => {
   const topCoupons = await Redemption.aggregate([
     { $match: { status: REDEMPTION_STATUS.APPLIED } },

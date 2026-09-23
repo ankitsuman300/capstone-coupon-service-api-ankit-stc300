@@ -3,8 +3,6 @@ dotenv.config();
 import { createLogger, format, transports } from "winston";
 import LokiTransport from "winston-loki";
 
-// Ship logs to Grafana Loki when LOKI_HOST is configured; otherwise fall back to
-// a plain console transport so the app runs cleanly in local dev without a Loki instance (no connection-refused spam, no crash on startup).
 
 
 const logTransports = [];
