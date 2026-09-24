@@ -99,6 +99,5 @@ export const purchaseProductService = async (id, quantity) => {
     product.status = PRODUCT_STATUS.OUT_OF_STOCK;
     await product.save();
   }
-
   return product;
 };
